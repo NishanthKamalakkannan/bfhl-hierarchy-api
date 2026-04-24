@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hierarchy Builder | BFHL</title>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #121a33;
+        --panel-2: #1a2550;
+        --text: #f4f7ff;
+        --muted: #b6c1ee;
+        --accent: #6ea8ff;
+        --danger: #ff758f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+        background: radial-gradient(circle at 20% 0%, #15204a, var(--bg) 45%);
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 28px 18px 42px;
+      }
+      .title {
+        font-size: 1.8rem;
+        margin-bottom: 8px;
+      }
+      .sub {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+      .card {
+        background: linear-gradient(180deg, var(--panel-2), var(--panel));
+        border: 1px solid #29345f;
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        background: #0a122f;
+        border: 1px solid #304281;
+        color: var(--text);
+        border-radius: 12px;
+        padding: 12px;
+        resize: vertical;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 16px;
+        color: #031434;
+        background: var(--accent);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.secondary {
+        color: var(--text);
+        background: #334170;
+      }
+      .error {
+        color: var(--danger);
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #081128;
+        border: 1px solid #273968;
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      .chip {
+        border-radius: 999px;
+        padding: 6px 12px;
+        border: 1px solid #40518b;
+        background: #112152;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1 class="title">SRM Full Stack Challenge - Hierarchy Visualizer</h1>
+      <p class="sub">Enter edges as comma-separated values, one per line, or JSON array.</p>
+
+      <section class="card">
+        <label for="input">Node Entries</label>
+        <textarea id="input">A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, G->H, G->H, G->I, hello, 1->2, A-></textarea>
+        <p class="muted">Examples: <code>A->B</code>, <code>B->C</code>. Whitespace around values is okay.</p>
+        <div class="row">
+          <button id="submit">Submit to /bfhl</button>
+          <button id="reset" class="secondary">Reset Example</button>
+        </div>
+        <div id="error" class="error"></div>
+      </section>
+
+      <section class="card">
+        <div class="chips" id="summary"></div>
+        <pre id="output">{ "status": "ready" }</pre>
+      </section>
+    </main>
+
+    <script>
+      const input = document.getElementById("input");
+      const submit = document.getElementById("submit");
+      const reset = document.getElementById("reset");
+      const output = document.getElementById("output");
+      const error = document.getElementById("error");
+      const summary = document.getElementById("summary");
+
+      const sample =
+        "A->B, A->C, B->D, C->E, E->F, X->Y, Y->Z, Z->X, G->H, G->H, G->I, hello, 1->2, A->";
+
+      function parseEntries(raw) {
+        const trimmed = raw.trim();
+        if (!trimmed) return [];
+
+        if (trimmed.startsWith("[")) {
+          const parsed = JSON.parse(trimmed);
+          if (!Array.isArray(parsed)) throw new Error("JSON input must be an array.");
+          return parsed.map(String);
+        }
+
+        return trimmed
+          .split(/[\n,]+/g)
+          .map((entry) => entry.trim())
+          .filter(Boolean);
+      }
+
+      function renderSummary(data) {
+        summary.innerHTML = "";
+        const rows = [
+          `Trees: ${data.summary?.total_trees ?? 0}`,
+          `Cycles: ${data.summary?.total_cycles ?? 0}`,
+          `Largest root: ${data.summary?.largest_tree_root || "-"}`,
+          `Invalid: ${data.invalid_entries?.length ?? 0}`,
+          `Duplicates: ${data.duplicate_edges?.length ?? 0}`,
+        ];
+        rows.forEach((text) => {
+          const chip = document.createElement("div");
+          chip.className = "chip";
+          chip.textContent = text;
+          summary.appendChild(chip);
+        });
+      }
+
+      submit.addEventListener("click", async () => {
+        error.textContent = "";
+        summary.innerHTML = "";
+
+        try {
+          const data = parseEntries(input.value);
+          const response = await fetch("/bfhl", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data }),
+          });
+
+          if (!response.ok) {
+            const failure = await response.json().catch(() => ({}));
+            throw new Error(failure.error || `Request failed with status ${response.status}`);
+          }
+
+          const json = await response.json();
+          renderSummary(json);
+          output.textContent = JSON.stringify(json, null, 2);
+        } catch (e) {
+          error.textContent = e.message || "API request failed.";
+        }
+      });
+
+      reset.addEventListener("click", () => {
+        input.value = sample;
+        output.textContent = '{ "status": "ready" }';
+        summary.innerHTML = "";
+        error.textContent = "";
+      });
+    </script>
+  </body>
+</html>
