@@ -193,17 +193,17 @@ After deployment, verify:
 
 Place your images in `docs/images/` using the file names below:
 
-1. `01-homepage.png` - Landing UI / Hero section  
-2. `02-analysis-success.png` - Successful API response in dashboard  
-3. `03-invalid-duplicate-case.png` - Input with invalid + duplicate entries  
-4. `04-render-deployment.png` - Render service live/deploy screen
+1. `homepage.jpeg` - Landing UI / Hero section  
+2. `analysis-success.jpeg` - Successful API response in dashboard  
+3. `invalid-duplicate-case.jpeg` - Input with invalid + duplicate entries  
+4. `render-deployment.jpeg` - Render service live/deploy screen
 
 README image previews:
 
-![Homepage](docs/images/01-homepage.png)
-![Analysis Success](docs/images/02-analysis-success.png)
-![Invalid and Duplicate Case](docs/images/03-invalid-duplicate-case.png)
-![Render Deployment](docs/images/04-render-deployment.png)
+![Homepage](docs/images/homepage.jpeg)
+![Analysis Success](docs/images/analysis-success.jpeg)
+![Invalid and Duplicate Case](docs/images/invalid-duplicate-case.jpeg)
+![Render Deployment](docs/images/render-deployment.jpeg)
 
 ---
 
